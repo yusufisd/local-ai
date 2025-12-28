@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// Ollama yapılandırması
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434"
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3"
+
 export async function POST(request: NextRequest) {
   try {
     const { message, history } = await request.json()
@@ -11,51 +15,95 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Burada lokal bir AI modeli entegre edilebilir
-    // Şimdilik basit bir yanıt üretici kullanıyoruz
-    // Gerçek bir lokal AI için burada Ollama, LM Studio veya başka bir lokal model API'si kullanılabilir
-
-    // Basit bir mock response (gerçek bir lokal AI entegrasyonu için değiştirilebilir)
-    const response = await generateResponse(message, history || [])
+    // Ollama API'sine istek gönder
+    const response = await generateOllamaResponse(message, history || [])
 
     return NextResponse.json({ response })
   } catch (error) {
     console.error("Chat API hatası:", error)
+    
+    // Ollama bağlantı hatası kontrolü
+    if (error instanceof Error && error.message.includes("fetch failed")) {
+      return NextResponse.json(
+        { 
+          error: "Ollama'ya bağlanılamadı. Lütfen Ollama'nın çalıştığından emin olun (http://localhost:11434)" 
+        },
+        { status: 503 }
+      )
+    }
+
+    // Ollama model hatası kontrolü
+    if (error instanceof Error && error.message.includes("model")) {
+      return NextResponse.json(
+        { 
+          error: `Model bulunamadı: ${OLLAMA_MODEL}. Lütfen 'ollama list' komutu ile mevcut modelleri kontrol edin veya .env.local dosyasındaki OLLAMA_MODEL değerini güncelleyin.` 
+        },
+        { status: 400 }
+      )
+    }
+
+    // Detaylı hata mesajı
+    const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu"
     return NextResponse.json(
-      { error: "Bir hata oluştu" },
+      { error: errorMessage },
       { status: 500 }
     )
   }
 }
 
-// Basit bir yanıt üretici (gerçek bir lokal AI modeli ile değiştirilebilir)
-async function generateResponse(
+// Ollama API'sini kullanarak yanıt üret
+async function generateOllamaResponse(
   message: string,
   history: Array<{ role: string; content: string }>
 ): Promise<string> {
-  // Bu fonksiyon gerçek bir lokal AI modeli API çağrısı ile değiştirilebilir
-  // Örnek: Ollama, LM Studio, veya başka bir lokal model
+  // Mesaj geçmişini Ollama formatına çevir
+  const messages = [
+    ...history.map((msg) => ({
+      role: msg.role === "user" ? "user" : "assistant",
+      content: msg.content,
+    })),
+    {
+      role: "user",
+      content: message,
+    },
+  ]
 
-  const lowerMessage = message.toLowerCase()
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: messages,
+        stream: false, // Streaming'i false yapıyoruz, tek seferde yanıt alıyoruz
+      }),
+    })
 
-  // Basit pattern matching (örnek amaçlı)
-  if (lowerMessage.includes("merhaba") || lowerMessage.includes("selam")) {
-    return "Merhaba! Size nasıl yardımcı olabilirim?"
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch {
+        const errorText = await response.text()
+        errorMessage = errorText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    const data = await response.json()
+
+    // Ollama yanıt formatı: { message: { content: "...", role: "assistant" }, ... }
+    if (data.message && data.message.content) {
+      return data.message.content
+    }
+
+    throw new Error("Ollama'dan beklenmeyen yanıt formatı")
+  } catch (error) {
+    console.error("Ollama API çağrı hatası:", error)
+    throw error
   }
-
-  if (lowerMessage.includes("nasılsın")) {
-    return "Teşekkür ederim, iyiyim! Size nasıl yardımcı olabilirim?"
-  }
-
-  if (lowerMessage.includes("adın") || lowerMessage.includes("kimsin")) {
-    return "Ben lokal AI asistanınızım. Size yardımcı olmak için buradayım."
-  }
-
-  if (lowerMessage.includes("yardım")) {
-    return "Size nasıl yardımcı olabilirim? Sorularınızı sorabilir, sohbet edebiliriz. Gerçek bir lokal AI modeli entegre edildiğinde daha kapsamlı yanıtlar alabilirsiniz."
-  }
-
-  // Varsayılan yanıt
-  return `"${message}" hakkında düşünüyorum. Bu basit bir mock yanıttır. Gerçek bir lokal AI modeli (örneğin Ollama, LM Studio) entegre edildiğinde daha detaylı ve bağlamsal yanıtlar alabilirsiniz.`
 }
 

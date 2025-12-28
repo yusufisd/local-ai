@@ -69,10 +69,15 @@ export function Chat({ className }: ChatProps) {
       })
 
       if (!response.ok) {
-        throw new Error("API hatası")
+        const errorData = await response.json().catch(() => ({ error: "API hatası" }))
+        throw new Error(errorData.error || "API hatası")
       }
 
       const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -87,7 +92,7 @@ export function Chat({ className }: ChatProps) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.",
+        content: error instanceof Error ? error.message : "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, errorMessage])

@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Local AI - Ollama Entegrasyonlu Chat Uygulaması
 
-## Getting Started
+Bu proje, lokal olarak çalışan Ollama AI modellerini kullanan bir Next.js chat uygulamasıdır.
 
-First, run the development server:
+## Özellikler
+
+- 🤖 Ollama ile lokal AI desteği
+- 💬 Modern chat arayüzü
+- 📱 Responsive tasarım
+- 🎨 shadcn/ui componentleri
+
+## Kurulum
+
+### 1. Bağımlılıkları Yükleyin
+
+```bash
+npm install
+# veya
+yarn install
+# veya
+pnpm install
+```
+
+### 2. Ollama'yı Kurun ve Başlatın
+
+[Ollama'yı resmi web sitesinden](https://ollama.org/) indirip kurun. Kurulumdan sonra Ollama'yı başlatın:
+
+```bash
+# Ollama'nın çalıştığını kontrol edin
+curl http://localhost:11434/api/tags
+```
+
+### 3. Bir Model İndirin
+
+Kullanmak istediğiniz bir modeli indirin (örnekler):
+
+```bash
+ollama pull llama3.2
+# veya
+ollama pull mistral
+# veya
+ollama pull codellama
+```
+
+Mevcut modelleri görmek için:
+```bash
+ollama list
+```
+
+### 4. Ortam Değişkenlerini Ayarlayın
+
+`.env.local` dosyası oluşturun (`.env.local.example` dosyasını referans alarak):
+
+```bash
+cp .env.local.example .env.local
+```
+
+`.env.local` dosyasını düzenleyin:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2  # İndirdiğiniz model adını buraya yazın
+```
+
+### 5. Geliştirme Sunucusunu Başlatın
 
 ```bash
 npm run dev
-# or
+# veya
 yarn dev
-# or
+# veya
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Kullanım
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Ollama'nın çalıştığından emin olun (`http://localhost:11434`)
+2. Uygulamayı açın ve sohbet etmeye başlayın!
+3. Sidebar'dan sohbet geçmişinize ve ayarlara erişebilirsiniz
 
-## Learn More
+## Yapılandırma
 
-To learn more about Next.js, take a look at the following resources:
+### Farklı Bir Model Kullanma
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`.env.local` dosyasındaki `OLLAMA_MODEL` değerini değiştirin:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+OLLAMA_MODEL=mistral
+```
 
-## Deploy on Vercel
+### Farklı Bir Ollama URL'i
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Eğer Ollama farklı bir portta çalışıyorsa:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+OLLAMA_BASE_URL=http://localhost:11435
+```
+
+## Sorun Giderme
+
+### Ollama'ya Bağlanılamıyor
+
+- Ollama'nın çalıştığından emin olun: `curl http://localhost:11434/api/tags`
+- `.env.local` dosyasındaki `OLLAMA_BASE_URL` değerini kontrol edin
+- Firewall ayarlarını kontrol edin
+
+### Model Bulunamadı
+
+- Modelin indirildiğinden emin olun: `ollama list`
+- `.env.local` dosyasındaki `OLLAMA_MODEL` adının doğru olduğunu kontrol edin
+
+## Teknolojiler
+
+- [Next.js](https://nextjs.org/)
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Ollama](https://ollama.org/)
